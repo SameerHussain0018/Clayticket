@@ -17,7 +17,7 @@ interface LoginState {
   userName: string;
   password: string;
   otp: string;
-  partnerCode: string;
+  auCode: string;
   isOtpRequired: boolean;
   error: string | null;
   successMessage: string | null;
@@ -28,7 +28,7 @@ const INITIAL_STATE: LoginState = {
   userName: '',
   password: '',
   otp: '',
-  partnerCode: '',
+  auCode: '',
   isOtpRequired: false,
   error: null,
   successMessage: null,
@@ -43,8 +43,7 @@ export function LoginPage() {
   const { user, loginWithExternalSession } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname?: string } } | null)?.from
-    ?.pathname;
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
   const [state, setState] = useState<LoginState>(INITIAL_STATE);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,42 +56,37 @@ export function LoginPage() {
     updateState({ error: null, successMessage: null });
   }, [updateState]);
 
-  const processLoginResponse = useCallback(
-    (response: ClayAuthApiResponse) => {
-      appLogger.info('Clay UserLogin response', response);
+const processLoginResponse = useCallback(
+  (response: ClayAuthApiResponse) => {
+    appLogger.info('Clay UserLogin response', response);
 
-      if (
-        response.status === 'success' ||
-        response.message === 'OTP generated Successfully' ||
-        response.message?.toLowerCase().includes('otp')
-      ) {
-        const partnerCode = response.partnerCode || response.data?.partnerCode || '';
-        updateState({
-          successMessage:
-            'OTP has been sent to your email! Please check and enter it below.',
-          isOtpRequired: true,
-          partnerCode,
-          error: null,
-        });
-      } else if (response.status === 'error') {
-        updateState({
-          error: response.message || 'Login failed! Please check your credentials.',
-          isOtpRequired: false,
-        });
-      } else {
-        updateState({
-          error: 'Unexpected response from server. Please try again.',
-          isOtpRequired: false,
-        });
-      }
-    },
-    [updateState],
-  );
-
+    // Check for success response more generically
+    if (
+      response.status === 'success' ||
+      response.message?.toLowerCase().includes('otp') ||
+      response.message === 'OTP generated Successfully'
+    ) {
+      const auCode = response.auCode || response.data?.auCode || '';
+      updateState({
+        successMessage: 'OTP has been sent to your email! Please check and enter it below.',
+        isOtpRequired: true,
+        auCode,
+        error: null,
+      });
+    } else if (response.status === 'error') {
+      updateState({
+        error: response.message || 'Login failed! Please check your credentials.',
+        isOtpRequired: false,
+      });
+    
+    }
+  },
+  [updateState],
+);
   const processOtpResponse = useCallback(
     (
       response: ClayAuthApiResponse,
-      ctx: { userName: string; partnerCode: string },
+      ctx: { userName: string; auCode: string },
     ) => {
       appLogger.info('Clay Verify_loginuser response', response);
 
@@ -112,14 +106,14 @@ export function LoginPage() {
         return;
       }
 
-      const authUser = buildAuthUserFromClayOtp(response, ctx.userName, ctx.partnerCode);
+      const authUser = buildAuthUserFromClayOtp(response, ctx.userName, ctx.auCode);
       loginWithExternalSession({ user: authUser, token: response.token.trim() });
       toast.success('Signed in');
 
       const target =
         from && from !== '/login' && from !== '/'
           ? from
-          : '/tickets';
+          : '/create-ticket';  // Changed to /create-ticket after login
       navigate(target, { replace: true });
     },
     [loginWithExternalSession, navigate, from, updateState],
@@ -140,7 +134,7 @@ export function LoginPage() {
           return;
         }
 
-        if (!state.partnerCode) {
+        if (!state.auCode) {
           updateState({
             error: 'Partner code is missing. Please login again.',
             isLoading: false,
@@ -149,10 +143,10 @@ export function LoginPage() {
           return;
         }
 
-        const response = await clayVerifyOtp(state.otp, state.partnerCode);
+        const response = await clayVerifyOtp(state.otp, state.auCode);
         processOtpResponse(response, {
           userName: state.userName,
-          partnerCode: state.partnerCode,
+          auCode: state.auCode,
         });
       } else {
         if (!state.userName || !state.password) {
@@ -197,7 +191,7 @@ export function LoginPage() {
       ) {
         updateState({
           successMessage: 'OTP resent successfully! Please check your email.',
-          partnerCode: response.partnerCode || response.data?.partnerCode || state.partnerCode,
+          auCode: response.auCode || response.data?.auCode || state.auCode,
           error: null,
         });
       } else {
@@ -219,7 +213,7 @@ export function LoginPage() {
   };
 
   if (user) {
-    return <Navigate to={from && from !== '/login' ? from : '/tickets'} replace />;
+    return <Navigate to={from && from !== '/login' ? from : '/create-ticket'} replace />;
   }
 
   return (

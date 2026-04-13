@@ -4,7 +4,7 @@ import { appLogger } from './logger';
 export interface ClayUserPayload {
   userID?: string;
   userName?: string;
-  partnerCode?: string;
+  auCode?: string;
   role?: string;
   markupdiscount?: string;
 }
@@ -14,7 +14,7 @@ export interface ClayAuthApiResponse {
   token?: string;
   isSuccess?: boolean;
   message?: string;
-  partnerCode?: string;
+  auCode?: string;
   data?: ClayUserPayload;
   token_expire?: string;
 }
@@ -35,7 +35,7 @@ function clayAuthBase(): string {
   if (typeof raw === 'string' && raw.replace(/\/$/, '').length > 0) {
     return raw.replace(/\/$/, '');
   }
-  return 'https://esimgo.clay.in/api/Authentication';
+  return 'https://localhost:44304/api/';
 }
 
 export async function clayUserLogin(
@@ -43,19 +43,32 @@ export async function clayUserLogin(
   password: string,
 ): Promise<ClayAuthApiResponse> {
   try {
-    const response = await fetch(`${clayAuthBase()}/UserLogin`, {
+    const response = await fetch(`${clayAuthBase()}Auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userName, password }),
+      // backend expects `username` (lowercase) according to curl examples
+      body: JSON.stringify({ username: userName, password }),
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return (await response.json()) as ClayAuthApiResponse;
+    const json = (await response.json()) as Record<string, any>;
+
+    // Normalize fields some Clay endpoints return (e.g. `aucode`)
+    if (json.aucode && !json.auCode) {
+      json.auCode = json.aucode;
+    }
+
+    // Treat presence of aucode as success for OTP generation flows
+    if (json.aucode && !json.status) {
+      json.status = 'success';
+    }
+
+    return json as ClayAuthApiResponse;
   } catch (error) {
     appLogger.error('Clay UserLogin failed', error);
     return {
@@ -67,15 +80,16 @@ export async function clayUserLogin(
 
 export async function clayVerifyOtp(
   otp: string,
-  partnerCode: string,
+  auCode: string,
 ): Promise<ClayAuthApiResponse> {
   try {
-    const response = await fetch(`${clayAuthBase()}/Verify_loginuser`, {
+    // verify endpoint uses kebab-case `verify-user` under Auth
+    const response = await fetch(`${clayAuthBase()}Auth/verify-user`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ otp, partnerCode }),
+      body: JSON.stringify({ otp, auCode }),
     });
 
     if (!response.ok) {
