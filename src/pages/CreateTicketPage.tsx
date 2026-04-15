@@ -1,6 +1,8 @@
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { FaSpinner } from 'react-icons/fa';
+import { HiOutlinePaperAirplane } from 'react-icons/hi2';
 import { useAuth } from '../hooks/useAuth';
 
 export function CreateTicketPage() {
@@ -57,56 +59,68 @@ export function CreateTicketPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-md mt-10">
-      <h1 className="text-2xl font-bold mb-6">Create Ticket</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="flex flex-col">
-          <label className="mb-1 font-medium">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            minLength={2}
-            className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter ticket title"
-          />
-        </div>
+    <div className="page">
+      <h1>Create ticket</h1>
+      <p className="lead">
+        Add a clear title and description so your team can help you faster.
+      </p>
 
-        <div className="flex flex-col">
-          <label className="mb-1 font-medium">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={5}
-            required
-            className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter ticket description"
-          />
-        </div>
+      <section className="card" style={{ marginTop: '1.25rem' }}>
+        <form className="form-panel" onSubmit={onSubmit} style={{ marginTop: 0 }}>
+          <label className="field">
+            <span>Title</span>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              minLength={2}
+              placeholder="Short summary of the issue"
+              disabled={submitting}
+            />
+          </label>
 
-        <div className="flex flex-col">
-          <label className="mb-1 font-medium">Project Name</label>
-          <input
-            type="text"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            required
-            className="border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter project name"
-          />
-        </div>
+          <label className="field">
+            <span>Description</span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={5}
+              required
+              placeholder="What happened, what you expected, and any steps to reproduce"
+              disabled={submitting}
+            />
+          </label>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-            submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {submitting ? 'Submitting…' : 'Submit Ticket'}
-        </button>
-      </form>
+          <label className="field">
+            <span>Project name</span>
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              required
+              placeholder="e.g. Arvind, PWG, or internal project code"
+              disabled={submitting}
+            />
+          </label>
+
+          <button type="submit" className="btn-primary" disabled={submitting} style={{ marginTop: '0.25rem' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              {submitting ? (
+                <>
+                  <FaSpinner className="loading-inline-icon" style={{ width: '1rem', height: '1rem' }} aria-hidden />
+                  Sending…
+                </>
+              ) : (
+                <>
+                  <HiOutlinePaperAirplane style={{ width: '1.1rem', height: '1.1rem' }} aria-hidden />
+                  Submit ticket
+                </>
+              )}
+            </span>
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

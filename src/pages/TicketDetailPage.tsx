@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { FaSpinner } from 'react-icons/fa';
 import { TICKET_TYPES, type Ticket, type TicketStatus, type TicketType } from '../types/models';
 import { useAuth } from '../hooks/useAuth';
-import { ticketService, ApiError } from '../services/tickets/ticketService';
+import { ticketService, ApiError } from '../services/tickets/ticketService.ts';
 
 const STATUSES: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed'];
 
@@ -78,7 +79,10 @@ export function TicketDetailPage() {
   if (loading) {
     return (
       <div className="page">
-        <p role="status">Loading…</p>
+        <p className="loading-inline page-loading" role="status">
+          <FaSpinner className="loading-inline-icon" aria-hidden />
+          Loading ticket…
+        </p>
       </div>
     );
   }
@@ -86,8 +90,11 @@ export function TicketDetailPage() {
   if (ticket === null) {
     return (
       <div className="page">
-        <p>Ticket not found.</p>
-        <Link to="/tickets">Back to list</Link>
+        <h1>Ticket not found</h1>
+        <p className="lead">This link may be outdated or the ticket was removed.</p>
+        <p>
+          <Link to="/tickets">Return to my tickets</Link>
+        </p>
       </div>
     );
   }

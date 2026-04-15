@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import { HiArrowRight } from 'react-icons/hi2';
 import { useAuth } from '../hooks/useAuth';
 
 interface LoginState {
@@ -68,7 +69,7 @@ export function LoginPage() {
       loginWithExternalSession({ user: authUser, token: data.token });
 
       toast.success('Login successful!');
-      navigate('/create-ticket', { replace: true });
+      navigate('/tickets/new', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
       toast.error('An unexpected error occurred. Please try again.');
@@ -177,29 +178,12 @@ export function LoginPage() {
                   disabled={state.isLoading}
                 >
                   {state.isLoading ? (
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      aria-hidden
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 1116 0A8 8 0 014 12z"
-                      />
-                    </svg>
+                    <FaSpinner className="h-5 w-5 animate-spin shrink-0" aria-hidden />
                   ) : (
-                    <span className="text-lg group-hover:translate-x-0.5 transition-transform">→</span>
+                    <HiArrowRight
+                      className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
                   )}
                   <span>{state.isLoading ? 'Please wait...' : 'Login'}</span>
                 </button>

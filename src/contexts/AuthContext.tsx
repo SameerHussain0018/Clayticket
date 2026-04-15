@@ -7,7 +7,7 @@ import {
 } from 'react';
 import type { AuthUser } from '../types/models';
 import { authService, type LoginCredentials } from '../services/auth/authService';
-import { ticketService } from '../services/tickets/ticketService';
+import { ticketService } from '../services/tickets/ticketService.ts';
 
 interface AuthContextValue {
   user: AuthUser | null;

@@ -1,4 +1,10 @@
 import { NavLink } from 'react-router-dom';
+import {
+  HiArrowRightOnRectangle,
+  HiOutlinePlusCircle,
+  HiOutlineSquares2X2,
+  HiOutlineTicket,
+} from 'react-icons/hi2';
 import { useAuth } from '../../hooks/useAuth';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -16,17 +22,27 @@ export function Sidebar() {
       </p>
       <nav className="sidebar-nav" aria-label="Main">
         <NavLink to="/dashboard" className={linkClass} end>
-          Dashboard
+          <span className="sidebar-link-inner">
+            <HiOutlineSquares2X2 className="sidebar-link-icon" aria-hidden />
+            Dashboard
+          </span>
         </NavLink>
         <NavLink to="/tickets/new" className={linkClass}>
-          Create Ticket
+          <span className="sidebar-link-inner">
+            <HiOutlinePlusCircle className="sidebar-link-icon" aria-hidden />
+            Create ticket
+          </span>
         </NavLink>
         <NavLink to="/tickets" className={linkClass}>
-          View Tickets
+          <span className="sidebar-link-inner">
+            <HiOutlineTicket className="sidebar-link-icon" aria-hidden />
+            My tickets
+          </span>
         </NavLink>
       </nav>
       <button type="button" className="sidebar-logout" onClick={() => void logout()}>
-        Logout
+        <HiArrowRightOnRectangle className="sidebar-link-icon" aria-hidden />
+        Log out
       </button>
     </aside>
   );

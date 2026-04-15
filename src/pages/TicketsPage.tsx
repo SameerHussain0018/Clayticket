@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { FaSpinner } from 'react-icons/fa';
+import { HiMagnifyingGlass, HiOutlineInbox, HiOutlineTicket } from 'react-icons/hi2';
 import { useAuth } from '../hooks/useAuth';
 import type { Ticket } from '../types/models';
 
@@ -14,6 +16,21 @@ interface ApiTicket {
   updatedDate: string;
 }
 
+function statusPillClass(status: string): string {
+  const key = (status || '').toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
+  const known: Record<string, string> = {
+    open: 'pill-status-open',
+    new: 'pill-status-new',
+    in_progress: 'pill-status-in_progress',
+    progress: 'pill-status-progress',
+    pending: 'pill-status-progress',
+    resolved: 'pill-status-resolved',
+    done: 'pill-status-done',
+    closed: 'pill-status-closed',
+  };
+  return known[key] ?? 'pill-status-default';
+}
+
 export function TicketsPage() {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -23,6 +40,7 @@ export function TicketsPage() {
 
   useEffect(() => {
     if (!user) return;
+    const userId = user.id;
 
     let cancelled = false;
 
@@ -36,7 +54,7 @@ export function TicketsPage() {
             'Content-Type': 'application/json',
             Accept: '*/*',
           },
-          body: JSON.stringify({ userID: user.id }),
+          body: JSON.stringify({ userID: userId }),
         });
 
         if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -44,20 +62,21 @@ export function TicketsPage() {
 
         if (!result.isSuccess) throw new Error(result.message || 'Failed to load tickets');
 
-     const mappedTickets: Ticket[] = result.data.map((t: ApiTicket) => ({
-  id: t.ticketID,              // map ticketID to id
-  projectName: t.projectName || '',
-  description: t.description || '',
-  status: t.status || '',
-  createdAt: t.createdAtUtc || '',
-  updatedAt: t.updatedDate || '',
-  type: 'General',             // default type
-}));
+        const mappedTickets: Ticket[] = result.data.map((t: ApiTicket) => ({
+          id: t.ticketID,
+          projectName: t.projectName || '',
+          description: t.description || '',
+          status: t.status || '',
+          createdAt: t.createdAtUtc || '',
+          updatedAt: t.updatedDate || '',
+          type: 'General',
+        }));
 
         if (!cancelled) setTickets(mappedTickets);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setError(err.message || 'Network error');
+          const message = err instanceof Error ? err.message : 'Network error';
+          setError(message);
           toast.error('Failed to load tickets');
         }
       } finally {
@@ -85,8 +104,9 @@ export function TicketsPage() {
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       toast.success('Ticket deleted');
       setTickets((prev) => prev.filter((t) => t.id !== id));
-    } catch (err: any) {
-      toast.error(err.message || 'Delete failed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Delete failed';
+      toast.error(message);
     }
   }
 
@@ -98,66 +118,103 @@ export function TicketsPage() {
 
   return (
     <div className="page">
-      <h1>Tickets Details</h1>
+      <h1>My tickets</h1>
+      <p className="lead muted" style={{ marginTop: '-0.25rem' }}>
+        Open a ticket to see full details. Use search to filter by project name.
+      </p>
 
-      <input
-        type="text"
-        placeholder="Search by project..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: '1rem', padding: '0.5rem', width: '100%' }}
-      />
+      <div className="tickets-toolbar">
+        <div className="search-field">
+          <HiMagnifyingGlass className="search-field-icon" aria-hidden />
+          <input
+            type="search"
+            placeholder="Search by project name…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search tickets by project"
+            disabled={loading}
+          />
+        </div>
+        {!loading && !error && (
+          <p className="small muted" style={{ margin: 0 }}>
+            {filteredTickets.length} ticket{filteredTickets.length === 1 ? '' : 's'}
+            {search.trim() ? ' match your search' : ''}
+          </p>
+        )}
+      </div>
 
-      {loading && <p role="status">Loading tickets…</p>}
+      {loading && (
+        <p className="loading-inline page-loading" role="status">
+          <FaSpinner className="loading-inline-icon" aria-hidden />
+          Loading your tickets…
+        </p>
+      )}
+
       {error && (
         <div className="banner banner-error" role="alert">
           {error}
         </div>
       )}
 
-      {!loading && !error && filteredTickets.length === 0 && (
-        <p className="muted">No tickets found.</p>
+      {!loading && !error && filteredTickets.length === 0 && tickets.length > 0 && (
+        <div className="empty-state" role="status">
+          <HiOutlineInbox className="empty-state-icon" aria-hidden />
+          <p style={{ margin: 0, fontWeight: 600, color: '#334155' }}>No tickets match this search</p>
+          <p className="small" style={{ margin: '0.35rem 0 0' }}>
+            Try another project name or clear the search box.
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && tickets.length === 0 && (
+        <div className="empty-state">
+          <HiOutlineTicket className="empty-state-icon" aria-hidden />
+          <p style={{ margin: 0, fontWeight: 600, color: '#334155' }}>You do not have any tickets yet</p>
+          <p className="small" style={{ margin: '0.35rem 0 0' }}>
+            <Link to="/tickets/new">Create your first ticket</Link> to get started.
+          </p>
+        </div>
       )}
 
       {!loading && !error && filteredTickets.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th>S.No</th>
-              <th>Project Name</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Created At</th>
-              <th>Updated At</th>
-              {user.role === 'admin' && <th>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTickets.map((t) => (
-              <tr key={t.id} style={{ borderBottom: '1px solid #ccc' }}>
-                <td>{t.id} </td>
-                <td>
-                  <Link to={`/tickets/${t.id}`}>{t.projectName}</Link>
-                </td>
-                <td>{t.description}</td>
-                <td>{t.status}</td>
-                <td>{t.createdAt ? new Date(t.createdAt).toLocaleString() : '-'}</td>
-                <td>{t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '-'}</td>
+        <ul className="ticket-list">
+          {filteredTickets.map((t, index) => (
+            <li key={t.id} className="ticket-row">
+              <div className="ticket-row-main">
+                <span className="pill pill-muted" title="Row number">
+                  #{index + 1}
+                </span>{' '}
+                <Link className="ticket-title-link" to={`/tickets/${t.id}`}>
+                  {t.projectName || 'Untitled project'}
+                </Link>
+                {t.description ? (
+                  <p className="ticket-desc-preview">{t.description}</p>
+                ) : null}
+                <div className="ticket-row-meta">
+                  <span>
+                    Created: {t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}
+                  </span>
+                  <span>
+                    Updated: {t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '—'}
+                  </span>
+                </div>
+              </div>
+              <div className="ticket-meta" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
+                <span className={`pill-status ${statusPillClass(t.status)}`}>{t.status || 'Unknown'}</span>
                 {user.role === 'admin' && (
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => void onDelete(t.id)}
-                      style={{ background: 'red', color: 'white', padding: '0.3rem 0.6rem' }}
-                    >
-                      Delete
-                    </button>
-                  </td>
+                  <button
+                    type="button"
+                    className="btn-danger btn-small"
+                    style={{ marginTop: '0.5rem' }}
+                    onClick={() => void onDelete(t.id)}
+                  >
+                    Delete
+                  </button>
                 )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
