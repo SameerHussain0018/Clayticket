@@ -87,7 +87,7 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_rgba(52,211,153,0.15),_transparent_70%)]" />
         <div className="w-full flex flex-col items-center">
           <div className="text-center mt-8">
-            <h2 className="text-4xl font-bold text-white mb-4">Welcome to Arvind Ticket</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">Welcome to Clay Ticket</h2>
             <p className="text-lg text-white max-w-md mx-auto">
               Login to your account to continue
             </p>
@@ -109,7 +109,7 @@ export function LoginPage() {
             <div className="p-8 pt-6">
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Login to Arvind Ticket
+                  Login to Clay Ticket
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
                   Please enter your credentials to log in.
