@@ -12,6 +12,7 @@ export const TICKET_TYPES = [
   'PWG Ticket',
   'Partner Support',
   'Billing',
+  'General',
 ] as const;
 
 export type TicketType = (typeof TICKET_TYPES)[number];
@@ -22,6 +23,7 @@ export interface Ticket {
   id: string;
   title: string;
   description: string;
+  projectName?: string;
   type: TicketType;
   status: TicketStatus;
   createdAt: string;
